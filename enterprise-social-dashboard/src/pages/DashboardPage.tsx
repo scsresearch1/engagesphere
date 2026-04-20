@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { getFirebaseWebDisplayInfo } from "../lib/firebaseClient";
 import { useAppState } from "../context/AppStateContext";
 import type { Post, Role } from "../types";
 import { DashboardCharts } from "./dashboard/DashboardCharts";
@@ -33,8 +34,7 @@ const initialDrafts: DraftRow[] = [
 
 function DashboardFirebaseStatus() {
   const { backend, rtdbError } = useAppState();
-  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || "—";
-  const databaseUrl = import.meta.env.VITE_FIREBASE_DATABASE_URL || "—";
+  const { projectId, databaseURL: databaseUrl } = getFirebaseWebDisplayInfo();
   return (
     <div className="dash-card dash-firebase-card">
       <div className="dash-card-head">
@@ -42,7 +42,7 @@ function DashboardFirebaseStatus() {
         <p className="dash-muted">
           {backend === "rtdb"
             ? "App state syncs to Realtime Database under the engageApp node."
-            : "Add VITE_FIREBASE_* variables in .env.local to switch this install to Realtime Database."}
+            : "Fill in Firebase Web values in src/config/firebaseWeb.ts (from the Firebase Console), or set VITE_FIREBASE_* in .env.local for local overrides."}
         </p>
       </div>
       <label className="dash-label">

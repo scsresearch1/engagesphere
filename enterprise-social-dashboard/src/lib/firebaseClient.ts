@@ -1,30 +1,41 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import { getDatabase, type Database } from "firebase/database";
+import { isFirebaseWebResolved, resolveFirebaseWebOptions } from "../config/firebaseWeb";
 
 let app: FirebaseApp | null = null;
 let db: Database | null = null;
 
 export function isFirebaseRtdbConfigured(): boolean {
-  return Boolean(
-    import.meta.env.VITE_FIREBASE_API_KEY &&
-      import.meta.env.VITE_FIREBASE_PROJECT_ID &&
-      import.meta.env.VITE_FIREBASE_APP_ID &&
-      import.meta.env.VITE_FIREBASE_DATABASE_URL
-  );
+  return isFirebaseWebResolved();
 }
 
 export function getFirebaseDatabase(): Database | null {
-  if (!isFirebaseRtdbConfigured()) return null;
+  if (!isFirebaseWebResolved()) return null;
   if (db) return db;
-  app = initializeApp({
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? undefined,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? undefined,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "000000000000",
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  });
+  const options = resolveFirebaseWebOptions();
+  if (!options) return null;
+  app = initializeApp(options);
   db = getDatabase(app);
   return db;
+}
+
+/** For UI: project + DB URL from resolved config (embedded or env fallback). */
+export function getFirebaseWebDisplayInfo(): {
+  projectId: string;
+  databaseURL: string;
+  configured: boolean;
+} {
+  const o = resolveFirebaseWebOptions();
+  if (!o) {
+    return {
+      projectId: "—",
+      databaseURL: "—",
+      configured: false,
+    };
+  }
+  return {
+    projectId: o.projectId ?? "—",
+    databaseURL: o.databaseURL ?? "—",
+    configured: true,
+  };
 }
