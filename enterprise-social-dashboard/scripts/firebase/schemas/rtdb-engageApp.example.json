@@ -1,0 +1,19 @@
+{
+  "_comment": "Example shape under engageApp (maps keyed by id). Used as documentation / seed reference.",
+  "users": {
+    "u-student-1": {
+      "id": "u-student-1",
+      "name": "Priya R",
+      "email": "student@engage.test",
+      "password": "password123",
+      "role": "Student",
+      "bio": "…",
+      "profileImage": "https://…",
+      "joinedAt": "2026-01-01T00:00:00.000Z"
+    }
+  },
+  "posts": {},
+  "comments": {},
+  "likes": {},
+  "notifications": {}
+}

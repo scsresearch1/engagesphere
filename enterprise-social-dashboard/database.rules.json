@@ -1,0 +1,13 @@
+{
+  /* EngageSphere: app data lives only under /engageApp (matches RTDB_APP_ROOT in code).
+     Publish these rules in Firebase Console → Realtime Database → Rules → Publish.
+     Default console rules (.read/.write false at root) block the app and seed script.
+     WARNING: open read/write is for development only. Before production, switch to
+     Firebase Authentication and rules like: ".read": "auth != null" scoped per user. */
+  "rules": {
+    "engageApp": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

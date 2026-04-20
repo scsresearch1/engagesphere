@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engagesphere.local/schemas/user.document.json",
+  "title": "engageApp.users.{userId}",
+  "type": "object",
+  "required": ["name", "email", "password", "role", "bio", "profileImage", "joinedAt"],
+  "properties": {
+    "id": { "type": "string", "description": "Matches RTDB key; redundant but allowed." },
+    "name": { "type": "string" },
+    "email": { "type": "string", "format": "email" },
+    "password": { "type": "string", "description": "Demo only; replace with Firebase Auth for production." },
+    "role": { "type": "string", "enum": ["Student", "Faculty", "Admin"] },
+    "bio": { "type": "string" },
+    "profileImage": { "type": "string" },
+    "joinedAt": { "type": "string", "format": "date-time" },
+    "approvalStatus": {
+      "type": "string",
+      "enum": ["pending"],
+      "description": "Self-serve signups only; omit once approved."
+    }
+  },
+  "additionalProperties": false
+}

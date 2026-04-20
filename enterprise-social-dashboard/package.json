@@ -1,0 +1,30 @@
+{
+  "name": "enterprise-social-dashboard",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "seed:rtdb": "tsx scripts/firebase/seed-rtdb.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react-swc": "^4.3.0",
+    "firebase-admin": "^13.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.9"
+  },
+  "dependencies": {
+    "firebase": "^12.7.0",
+    "lucide-react": "^1.8.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.1",
+    "recharts": "^3.8.1"
+  }
+}

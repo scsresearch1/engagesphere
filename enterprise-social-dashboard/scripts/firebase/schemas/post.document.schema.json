@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engagesphere.local/schemas/post.document.json",
+  "title": "engageApp.posts.{postId}",
+  "type": "object",
+  "required": ["userId", "content", "createdAt"],
+  "properties": {
+    "id": { "type": "string" },
+    "userId": { "type": "string" },
+    "content": { "type": "string" },
+    "imageUrl": { "type": ["string", "null"] },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

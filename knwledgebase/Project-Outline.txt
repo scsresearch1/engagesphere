@@ -1,0 +1,211 @@
+﻿================================================================================
+EngageSphere — Project Outline (aligned to current implementation)
+================================================================================
+Repository root: Ramasuseela_Project
+Primary application: enterprise-social-dashboard/ (React + TypeScript + Vite)
+Knowledge base (this folder): knwledgebase/
+Companion docs: Features-by-Category.md, Action-Flows.md, Report-Expansion-Guide.md
+================================================================================
+
+1) PROJECT DEFINITION
+
+1.1 Purpose
+  - EngageSphere is a web application combining a social-style feed (posts, comments,
+    likes, notifications) with an analytics-heavy dashboard and an admin console.
+  - Target users: Students and Faculty as primary participants; Administrators for
+    governance (approvals + moderation).
+
+1.2 Current delivery state (as implemented)
+  - Phase A (local): Full UI with persistence in browser localStorage when Firebase
+    web env vars are NOT configured.
+  - Phase B (connected): Firebase Realtime Database (RTDB) at node engageApp/ syncs
+    the same logical data model; granular reads/writes + onValue listeners.
+  - Self-serve registration creates Student or Faculty accounts in a PENDING state;
+    an Admin must approve before first login. Admin accounts are NOT creatable via
+    public signup (seed / manual provisioning only).
+  - Firebase Authentication and Cloud Firestore are NOT yet wired into the client;
+    passwords remain on user documents for demo (NOT production practice).
+  - Hosting target: Netlify (netlify.toml + dist publish); SPA fallback configured.
+
+1.3 Roles
+  - Student, Faculty, Admin (TypeScript union Role in src/types.ts).
+  - SelfServeRole = Student | Faculty (signup constraint).
+  - Admin-only route: /admin (PrivateRoute allowRoles={["Admin"]}).
+
+--------------------------------------------------------------------------------
+
+2) TECHNOLOGY STACK
+
+2.1 Runtime & tooling
+  - React 19, react-dom 19, TypeScript ~6, Vite 8.
+  - @vitejs/plugin-react-swc for fast refresh.
+  - Package manager: npm; scripts: dev, build, preview, seed:rtdb.
+
+2.2 Libraries
+  - react-router-dom 7 — routing, nested routes, Navigate redirects.
+  - firebase 12 — client RTDB (getDatabase, ref, onValue, set, update).
+  - firebase-admin 13 — dev-only seed script (tsx scripts/firebase/seed-rtdb.ts).
+  - recharts 3 — dashboard charts (bar, line, area, pie, donut).
+  - lucide-react — icons (sidebar, admin, notifications, etc.).
+
+2.3 Styling
+  - Global: src/styles.css, src/app-pages.css, page-specific (e.g. dashboard.css,
+    admin-hub.css, notifications-inbox.css).
+  - Theme: ThemeContext + data-theme on html; ThemeToggle in layout and auth pages.
+
+--------------------------------------------------------------------------------
+
+3) DIRECTORY LAYOUT (high level)
+
+  enterprise-social-dashboard/
+    src/
+      App.tsx                 — route table, providers wrapper
+      main.tsx                — React root, BrowserRouter, ThemeProvider, CSS imports
+      types.ts                — User, Post, Comment, Like, NotificationItem, AppData, SelfServeRole
+      context/
+        AppStateContext.tsx   — global state, login/register, CRUD, RTDB sync, approvals
+        ThemeContext.tsx
+      data/seed.ts            — synthetic initialData (10 users, 100 posts, engagement)
+      lib/firebaseClient.ts   — init RTDB when VITE_FIREBASE_* present
+      services/
+        rtdbAppTree.ts        — engageApp tree <-> AppData, omitUndefined
+        rtdbWrites.ts         — RTDB mutations (users, posts, cascade delete, approve)
+      layout/AppLayout.tsx    — sidebar, nav, stats footer, topbar copy (local vs RTDB)
+      pages/                  — Login, Signup, ForgotPassword, Dashboard, Feed, Profile,
+                                PostDetails, Notifications, Admin
+      pages/dashboard/*       — chart widgets, useDashboardDerived, global search strip
+      components/             — AuthRoute, PrivateRoute, PostCard, PostComposer, PageHero, ThemeToggle
+    scripts/firebase/
+      seed-rtdb.ts            — Admin SDK seed of engageApp
+      schemas/                — JSON schema / example JSON for RTDB documentation
+    database.rules.json       — dev rules: read/write true under engageApp only
+    firebase.json             — points rules file for firebase deploy (optional CLI)
+    env.example               — VITE_ vars + seed env hints
+    netlify.toml              — build + SPA redirect
+    public/_redirects         — SPA fallback for Netlify
+
+--------------------------------------------------------------------------------
+
+4) APPLICATION ROUTES
+
+Public (AuthRoute — redirect to /dashboard if already logged in):
+  /login
+  /signup
+  /forgot-password
+
+Protected (PrivateRoute — requires session + approved user after data load):
+  /*  wrapped in AppLayout
+      /dashboard        — analytics home (Recharts, KPIs, search strip, previews)
+      /feed             — composer + post stream
+      /profile          — edit profile fields
+      /post/:postId     — single post view
+      /notifications    — inbox, filters, mark all read
+      /admin            — Admin only: approvals, user grid, post/comment removal
+      /                 — Navigate to /dashboard
+      *                 — Navigate to /dashboard
+
+--------------------------------------------------------------------------------
+
+5) DATA MODEL (logical)
+
+Stored under AppData / engageApp:
+  users[]           id, name, email, password, role, bio, profileImage, joinedAt,
+                    optional approvalStatus: "pending"
+  posts[]           id, userId, content, optional imageUrl, createdAt, optional updatedAt
+  comments[]        id, postId, userId, text, createdAt
+  likes[]           id, postId, userId, createdAt
+  notifications[]   id, receiverUserId, senderUserId, type like|comment, postId,
+                    message, isRead, createdAt
+
+RTDB physical layout: engageApp/{users|posts|comments|likes|notifications}/{id}
+
+Seeded demo logins (also in LoginPage “Demo users”):
+  student@engage.test / faculty@engage.test / admin@engage.test — password: password123
+
+--------------------------------------------------------------------------------
+
+6) FUNCTIONAL MODULES (implementation mapping)
+
+6.1 Authentication & session
+  - Files: AppStateContext (login, logout), LoginPage, PrivateRoute, AuthRoute.
+  - Session: localStorage key engagesphere-current-user-v1.
+  - appReady: avoids login redirect before first RTDB snapshot.
+
+6.2 Registration & governance
+  - SignupPage: Student|Faculty only; success screen without auto-login.
+  - register(): sets approvalStatus pending; Admin role rejected at type level + copy.
+  - AdminPage: approvePendingUser, rejectPendingUser; stats tile for pending count.
+
+6.3 Feed & posts
+  - FeedPage, PostDetailsPage, PostComposer, PostCard.
+  - createPost, updatePost, deletePost (cascade) in context + rtdbWrites.
+
+6.4 Comments & likes
+  - addComment, deleteComment, toggleLike; notifications to post owner.
+
+6.5 Notifications
+  - NotificationsPage + markAllNotificationsRead; sidebar badge unreadCount.
+
+6.6 Profile
+  - ProfilePage; updateProfile patches user fields.
+
+6.7 Dashboard & analytics
+  - DashboardPage orchestrates widgets; useDashboardDerived computes KPIs, charts,
+    timeline, leaderboard, heat week, streak, role pie, notification donut, etc.
+  - DashboardGlobalSearch: query, role filter, sort, date range; trending tags filter
+    by substring on post content (fixed tag vocabulary).
+
+6.8 Administration
+  - AdminPage: registration approvals, user directory, post list with remove,
+    recent comments with remove.
+
+6.9 Persistence modes
+  - Local: STORAGE_KEY engagesphere-static-state-v1 JSON.
+  - RTDB: onValue(engageApp); mutations via rtdb* helpers.
+
+6.10 Seeding & ops
+  - npm run seed:rtdb — requires FIREBASE_SERVICE_ACCOUNT_PATH, optional
+    FIREBASE_DATABASE_URL (default engagesphere-a06c3 RTDB URL in script).
+  - resetDemoToSeed() from login: full tree replace + logout.
+
+--------------------------------------------------------------------------------
+
+7) SECURITY NOTES (current vs ideal)
+
+  - database.rules.json (dev): public read/write under engageApp — must be replaced
+    before any real user data with auth-based rules.
+  - Demo passwords in cleartext in database — acceptable only for class demo;
+    production requires Firebase Auth + server-side or rule-protected profiles.
+  - Service account JSON must never ship in frontend or public repos.
+
+--------------------------------------------------------------------------------
+
+8) DEPLOYMENT
+
+  - Build: npm run build → dist/
+  - Netlify: netlify.toml command + publish; redirects for SPA.
+  - Client env: copy env.example to .env.local with VITE_FIREBASE_API_KEY,
+    VITE_FIREBASE_APP_ID, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_DATABASE_URL, etc.
+
+--------------------------------------------------------------------------------
+
+9) DOCUMENTATION DELIVERABLES (knowledge base)
+
+  - Features-by-Category.md   — feature matrix by product category.
+  - Action-Flows.md           — user and system flows + mermaid diagram.
+  - Report-Expansion-Guide.md — scaffold to grow a ~150-page academic report.
+  - Project-Outline.txt       — this file; master scope aligned to code.
+
+--------------------------------------------------------------------------------
+
+10) OUT OF SCOPE (current build)
+
+  - Firebase Authentication (email link / password via Firebase) not integrated.
+  - Firestore not used for app state (RTDB is the live backend when enabled).
+  - Firebase Storage uploads not implemented (external image URLs only).
+  - No separate AI Lab / Settings-only / extra marketing pages (trimmed product).
+  - No dedicated Node/Express API for this MVP.
+
+================================================================================
+End of outline (revision matches enterprise-social-dashboard as of knowledge-base update).
+================================================================================
