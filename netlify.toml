@@ -1,0 +1,11 @@
+# Monorepo: app lives in enterprise-social-dashboard/
+# Netlify UI can instead set "Base directory" to enterprise-social-dashboard and omit this file's base — either works.
+[build]
+  base = "enterprise-social-dashboard"
+  command = "npm ci && npm run build"
+  publish = "enterprise-social-dashboard/dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
